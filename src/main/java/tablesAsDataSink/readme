@@ -1,0 +1,8 @@
+// create table.
+hbase> create 'Users', 'data'
+
+// args:
+// -t -> table name.
+// -i -> input file.
+// -c -> column (family + qulifier)
+-t Users -i users.json -c data:json
