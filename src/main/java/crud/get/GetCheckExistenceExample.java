@@ -74,13 +74,21 @@ public class GetCheckExistenceExample {
 				put3.addColumn(Bytes.toBytes("data"), Bytes.toBytes("another_qualifier"),
 						Bytes.toBytes("another_value"));
 				puts.add(put3);
-
+				
+				// Insert two rows into the table.
 				table.put(puts);
-
+				
 				// -- Get the data --//
+				
+				
+				// create a Get object for row key - row2.	
 				Get get1 = new Get(Bytes.toBytes("row2"));
 				get1.addColumn(Bytes.toBytes("data"), Bytes.toBytes("json"));
+				
+				// get1 Only checks for existence of data, but do not return any of it.
 				get1.setCheckExistenceOnly(true);
+				
+				// execute the check.
 				Result result1 = table.get(get1);
 
 				byte[] val = result1.getValue(Bytes.toBytes("data"), Bytes.toBytes("json"));
