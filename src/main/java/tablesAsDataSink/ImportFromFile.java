@@ -33,11 +33,14 @@ import org.apache.log4j.Logger;
 
 // ImportFromFile MapReduce job that reads from a file and writes into a table.
 public class ImportFromFile {
-	private static final Log LOG = LogFactory.getLog(ImportFromFile.class);	
-	
+	private static final Log LOG = LogFactory.getLog(ImportFromFile.class);
+
 	// Define a job name for later use.
 	public static final String NAME = "ImportFromFile";
-	public enum Counters {LINES}
+
+	public enum Counters {
+		LINES
+	}
 
 	// // Define the mapper class, extending the provided Hadoop class.
 	static class ImportMapper extends Mapper<LongWritable, Text, ImmutableBytesWritable, Mutation> {
@@ -45,19 +48,22 @@ public class ImportFromFile {
 		private byte[] qualifier = null;
 
 		/**
-		 * called
-		 * once when the class is instantiated by the framework. Here it is used
-		 * to parse the given column into a column family and qualifier
+		 * called once when the class is instantiated by the framework. Here it
+		 * is used to parse the given column into a column family and qualifier
 		 *
-		 * @param context The task context.
-		 * @throws IOException When an operation fails - not possible here.
-		 * @throws InterruptedException When the task is aborted.
+		 * @param context
+		 *            The task context.
+		 * @throws IOException
+		 *             When an operation fails - not possible here.
+		 * @throws InterruptedException
+		 *             When the task is aborted.
 		 */
 		@Override
 		protected void setup(Context context) throws IOException, InterruptedException {
 			String column = context.getConfiguration().get("conf.column");
-			
-			// Splits a column in family:qualifier form into separate byte arrays. 
+
+			// Splits a column in family:qualifier form into separate byte
+			// arrays.
 			byte[][] colkey = KeyValue.parseColumn(Bytes.toBytes(column));
 			family = colkey[0];
 			if (colkey.length > 1) {
@@ -66,14 +72,18 @@ public class ImportFromFile {
 		}
 
 		/**
-		 * being called for every row in the input text file, each containing a JSON record.
-		 * The map() function transforms the key/value provided by the
-		 * InputFormat to what is needed by the OutputFormat.
+		 * being called for every row in the input text file, each containing a
+		 * JSON record. The map() function transforms the key/value provided by
+		 * the InputFormat to what is needed by the OutputFormat.
 		 *
-		 * @param offset The current offset into the input file.
-		 * @param line The current line of the file.
-		 * @param context The task context.
-		 * @throws IOException When mapping the input fails.
+		 * @param offset
+		 *            The current offset into the input file.
+		 * @param line
+		 *            The current line of the file.
+		 * @param context
+		 *            The task context.
+		 * @throws IOException
+		 *             When mapping the input fails.
 		 */
 		@Override
 		protected void map(LongWritable offset, Text line, Context context) throws IOException, InterruptedException {
@@ -81,7 +91,8 @@ public class ImportFromFile {
 				String lineString = line.toString();
 
 				// creates a HBase row key by using an MD5 hash of the line
-				// content. It then stores the line content as-is in the provided column, ti‐
+				// content. It then stores the line content as-is in the
+				// provided column, ti‐
 				// tled data:json
 				// byte[] rowkey = DigestUtils.md5(lineString);
 				byte[] rowkey = Bytes.toBytes("rowKey1");
@@ -92,7 +103,8 @@ public class ImportFromFile {
 				put.addColumn(family, qualifier, Bytes.toBytes(lineString));
 
 				// Store the original data in a column in the given table.
-				// ImmutableBytesWritable - A byte sequence that is usable as a key or value.
+				// ImmutableBytesWritable - A byte sequence that is usable as a
+				// key or value.
 				context.write(new ImmutableBytesWritable(rowkey), put);
 				context.getCounter(Counters.LINES).increment(1);
 
@@ -103,13 +115,15 @@ public class ImportFromFile {
 	}
 
 	/**
-	 * Parse the command line parameters using the Apache Commons
-	 * CLI classes. These are already part of HBase and therefore are
-	 * handy to process the job specific parameters.
+	 * Parse the command line parameters using the Apache Commons CLI classes.
+	 * These are already part of HBase and therefore are handy to process the
+	 * job specific parameters.
 	 *
-	 * @param args The parameters to parse.
+	 * @param args
+	 *            The parameters to parse.
 	 * @return The parsed command line.
-	 * @throws ParseException When the parsing of the parameters fails.
+	 * @throws ParseException
+	 *             When the parsing of the parameters fails.
 	 */
 	private static CommandLine parseArgs(String[] args) throws ParseException {
 		Options options = new Options();
@@ -146,19 +160,23 @@ public class ImportFromFile {
 	/**
 	 * Main entry point.
 	 *
-	 * @param args The command line parameters.
-	 * @throws Exception When running the job fails.
+	 * @param args
+	 *            The command line parameters.
+	 * @throws Exception
+	 *             When running the job fails.
 	 */
 	public static void main(java.lang.String[] args) throws Exception {
 		Configuration conf = HBaseConfiguration.create();
 
-		// GenericOptionsParser is a utility to parse command line arguments generic to the Hadoop framework
-		// Give the command line arguments to the generic parser first to handle "-Dxyz" properties.
+		// GenericOptionsParser is a utility to parse command line arguments
+		// generic to the Hadoop framework
+		// Give the command line arguments to the generic parser first to handle
+		// "-Dxyz" properties.
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		CommandLine cmd = parseArgs(otherArgs);
-		
+
 		// check debug flag and other options
-		if (cmd.hasOption("d")) 
+		if (cmd.hasOption("d"))
 			conf.set("conf.debug", "true");
 
 		// get details
@@ -171,16 +189,18 @@ public class ImportFromFile {
 		Job job = Job.getInstance(conf, "Import from file " + input + " into table " + table);
 		job.setJarByClass(ImportFromFile.class);
 		job.setMapperClass(ImportMapper.class);
-		
-		// provided by HBase and allows the job to easily write data into a table
-		// The key and value types needed by this class are implicitly fixed to 
+
+		// provided by HBase and allows the job to easily write data into a
+		// table
+		// The key and value types needed by this class are implicitly fixed to
 		// ImmutableBytesWritable for the key, and Mutation for the value
 		job.setOutputFormatClass(TableOutputFormat.class);
 		job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, table);
 		job.setOutputKeyClass(ImmutableBytesWritable.class);
 		job.setOutputValueClass(Writable.class);
 
-		// his is a map only job, therefore tell the framework to bypass the reduce step.
+		// his is a map only job, therefore tell the framework to bypass the
+		// reduce step.
 		job.setNumReduceTasks(0);
 		FileInputFormat.addInputPath(job, new Path(input));
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
