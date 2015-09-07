@@ -1,4 +1,4 @@
-package crud;
+package crud.get;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
